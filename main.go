@@ -7,5 +7,10 @@ import (
 )
 
 func main() {
-	fmt.Println("IsEven", 4, util.IsEven(4))
+	fmt.Println("IsEven:", 4, util.IsEven(4))
+
+	bankClient := util.GetBankClient()
+	balance, _ := bankClient.GetBalanceByID(123)
+
+	fmt.Println("Balance:", balance)
 }
