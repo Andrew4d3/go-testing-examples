@@ -1,30 +1,66 @@
 package util
 
 import (
-	"errors"
-	"testing"
+	"math/rand"
 
+	"errors"
+	"reflect"
+	"testing"
+	"time"
+
+	"bou.ke/monkey"
+
+	"github.com/Andrew4d3/go-testing-examples/mocks"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-type MockedBankConn struct {
-	mock.Mock
+func Test_GetBalanceByID(t *testing.T) {
+	defer monkey.UnpatchAll()
+
+	t.Run("Should return the correct Balance amount", func(t *testing.T) {
+		bankConn := new(bankConnection)
+		monkey.PatchInstanceMethod(reflect.TypeOf(&rand.Rand{}), "Float64", func(_ *rand.Rand) float64 {
+			return 0.5
+		})
+
+		balance, err := bankConn.GetBalanceByID(1)
+
+		assert.NoError(t, err)
+		assert.Equal(t, float64(500), balance)
+	})
 }
 
-func (m *MockedBankConn) GetBalanceByID(id int) (float64, error) {
-	args := m.Called(id)
-	return (args.Get(0)).(float64), args.Error(1)
+func Test_GetCurrentISOTime(t *testing.T) {
+	defer monkey.UnpatchAll()
+
+	t.Run("Should return the correct ISO time", func(t *testing.T) {
+		monkey.Patch(time.Now, func() time.Time {
+			return time.Date(2020, 10, 25, 0, 0, 0, 0, time.UTC)
+		})
+
+		assert.Equal(t, "2020-10-25T00:00:00Z", GetCurrentISOTime())
+	})
+}
+
+func Test_ExtractContextValue(t *testing.T) {
+	t.Run("Should return the expected value from the context", func(t *testing.T) {
+		ctx := new(mocks.MockedContext)
+		ctx.On("Value", "foo").Return("bar")
+
+		value := ExtractContextValue(ctx, "foo")
+
+		assert.Equal(t, value, "bar")
+		ctx.AssertExpectations(t)
+	})
 }
 
 func Test_SumAccountBalances(t *testing.T) {
 	t.Run("Should return the correct sum of both accounts", func(t *testing.T) {
-		// Define our mocked connection object
-		bankConn := new(MockedBankConn)
-		// Setup expectation
+		// Using the generated mocks
+		bankConn := new(mocks.BankConnection)
 		bankConn.On("GetBalanceByID", 1).Return(float64(1000), nil)
 		bankConn.On("GetBalanceByID", 2).Return(float64(2000), nil)
-		// Call the targeted function
+
 		total, err := SumAccountBalances(1, 2, bankConn)
 
 		assert.NoError(t, err)
@@ -34,29 +70,25 @@ func Test_SumAccountBalances(t *testing.T) {
 	})
 
 	t.Run("Should return error if the first account gets Error", func(t *testing.T) {
-		// Define our mocked connection object
-		bankConn := new(MockedBankConn)
-		// Setup expectation
+		// Using the generated mocks
+		bankConn := new(mocks.BankConnection)
 		bankConn.On("GetBalanceByID", 1).Return(float64(0), errors.New("Boom A"))
-		// Call the targeted function
+
 		_, err := SumAccountBalances(1, 2, bankConn)
 
 		assert.Errorf(t, err, "Boom A")
-
 		bankConn.AssertExpectations(t)
 	})
 
 	t.Run("Should return error if the first account gets Error", func(t *testing.T) {
-		// Define our mocked connection object
-		bankConn := new(MockedBankConn)
-		// Setup expectation
+		// Using the generated mocks
+		bankConn := new(mocks.BankConnection)
 		bankConn.On("GetBalanceByID", 1).Return(float64(1000), nil)
 		bankConn.On("GetBalanceByID", 2).Return(float64(0), errors.New("Boom B"))
-		// Call the targeted function
+
 		_, err := SumAccountBalances(1, 2, bankConn)
 
 		assert.Errorf(t, err, "Boom B")
-
 		bankConn.AssertExpectations(t)
 	})
 }

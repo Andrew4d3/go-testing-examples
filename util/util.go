@@ -1,6 +1,7 @@
 package util
 
 import (
+	"context"
 	"math/rand"
 	"time"
 )
@@ -29,6 +30,11 @@ func GetBankConnection() BankConnection {
 	return new(bankConnection)
 }
 
+// ExtractContextValue extracts the value by key
+func ExtractContextValue(ctx context.Context, key string) string {
+	return (ctx.Value(key)).(string)
+}
+
 // SumAccountBalances sum the amount of two accounts
 func SumAccountBalances(accountA int, accountB int, client BankConnection) (float64, error) {
 	balanceA, err := client.GetBalanceByID(accountA)
@@ -51,4 +57,8 @@ func IsEven(number int) bool {
 	}
 
 	return false
+}
+
+func GetCurrentISOTime() string {
+	return time.Now().Format(time.RFC3339)
 }
